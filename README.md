@@ -1,2 +1,2 @@
-# 2th-and-3th-moment-subset-sum-question
-This repository puts the program we used in 2th, 3th moment subset sum question
+# 2nd and 3rd moment-subset-sum-question
+This repository contains the programs we used for the 2nd and 3rd moment subset sum problems.
