@@ -13,12 +13,6 @@ where
     Q_{k,q,p} = (sqrt(q) + k + (q - sqrt(q))/p - 1)_k,
     L_{k,q,p} = k! * binom(q/p + k/p - 1, k/p) if p divides k,
                 0 otherwise.
-
-The original cited script used the old minus-sign term in Q and omitted L.
-This version works in logarithms and returns the finite list of (q,k) for which
-this inequality does not prove positivity.  The option --verify-exceptions also
-checks the remaining small exceptional cases by direct dynamic programming over
-power-sum pairs (sum x, sum x^2).
 """
 from __future__ import annotations
 
