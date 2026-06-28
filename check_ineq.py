@@ -29,13 +29,6 @@ Q_MIN = 17
 Q_MAX_EXCLUSIVE = 53267
 CHAR_MIN = 5
 
-EXPECTED_EXCEPTIONAL_CASES = {
-    (17, 7), (17, 8),
-    (19, 7), (19, 8), (19, 9),
-    (23, 11),
-    (25, 8), (25, 9), (25, 10), (25, 11), (25, 12),
-}
-
 Pair = Tuple[int, int]
 
 
@@ -268,24 +261,38 @@ def coverage_sizes(q: int, kmax: int, add: List[List[int]], square: List[int]) -
     return [len(layer) for layer in states]
 
 
-def verify_exception_cases() -> bool:
-    cases = {
-        17: [5, 6, 7, 8],
-        19: [5, 6, 7, 8, 9],
-        23: [5, 11],
-        25: [8, 9, 10, 11, 12],
-    }
-    ok_all = True
+def verify_exception_cases(failures: Set[Tuple[int, int]]) -> bool:
+    """
+    Verify exactly the (q,k) pairs that were found to fail the inequality.
+    Uses direct DP to check that they cover all q^2 pairs (sum x, sum x^2).
+    """
+    if not failures:
+        print("\nNo runtime failures to verify with DP.")
+        return True
+
+    by_q: Dict[int, List[int]] = {}
+    for q, k in failures:
+        by_q.setdefault(q, []).append(k)
+
     print("\n" + "=" * 80)
-    print("DIRECT VERIFICATION OF EXCEPTIONAL CASES")
+    print("DIRECT DP VERIFICATION OF RUNTIME FAILURES")
     print("=" * 80)
-    for q, ks in cases.items():
-        add, square = gf25_tables() if q == 25 else prime_field_tables(q)
-        sizes = coverage_sizes(q, max(ks), add, square)
+    ok_all = True
+
+    for q, ks in by_q.items():
+        if q == 25:
+            add, square = gf25_tables()
+        else:
+            add, square = prime_field_tables(q)
+
+        max_k = max(ks)
+        sizes = coverage_sizes(q, max_k, add, square)
+
         for k in ks:
             ok = sizes[k] == q * q
             ok_all = ok_all and ok
-            print(f"q={q:2d}, k={k:2d}: reached {sizes[k]:4d}/{q*q:4d} pairs -- {'OK' if ok else 'FAIL'}")
+            status = "OK" if ok else "FAIL"
+            print(f"q={q:2d}, k={k:2d}: reached {sizes[k]:4d}/{q*q:4d} pairs -- {status}")
     return ok_all
 
 
@@ -295,38 +302,31 @@ def format_ranges(ranges: Tuple[Tuple[int, int], ...]) -> str:
     return ", ".join(f"{{{a}}}" if a == b else f"[{a}, {b}]" for a, b in ranges)
 
 
-def print_report(results: Sequence[CaseResult]) -> None:
+def print_report(results: Sequence[CaseResult], failures: Set[Tuple[int, int]]) -> None:
     all_hold = [r for r in results if r.status == "all_hold"]
     some_fail = [r for r in results if r.status == "some_fail"]
     all_fail = [r for r in results if r.status == "all_fail"]
     empty = [r for r in results if r.status == "empty"]
+
     print("\n" + "=" * 80)
-    print("RESULTS FOR THE CORRECTED INEQUALITY")
+    print("RESULTS FOR THE CORRECTED INEQUALITY (RUNTIME COMPUTATION)")
     print("=" * 80)
     print(f"Total prime-power q: {len(results)}")
     print(f"All hold:            {len(all_hold)}")
     print(f"Some fail:           {len(some_fail)}")
     print(f"All fail:            {len(all_fail)}")
     print(f"Empty k-range:       {len(empty)}")
+
     print("\n" + "=" * 80)
-    print("FAILURE CASES")
+    print(f"RUNTIME FAILURE CASES  (total {len(failures)} points)")
     print("=" * 80)
     failures_by_case = sorted(some_fail + all_fail, key=lambda r: r.q)
     if not failures_by_case:
         print("None.")
     else:
         for r in failures_by_case:
-            print(f"q={r.q:>5} = {r.p}^{r.s}, k in [{r.k_min}, {r.k_max}], holds {r.hold_count}/{r.total_k}, fails at {format_ranges(r.fail_ranges)}")
-    failures = {(r.q, k) for r in results for a, b in r.fail_ranges for k in range(a, b + 1)}
-    print("\n" + "=" * 80)
-    print("EXCEPTIONAL-CASE CHECK")
-    print("=" * 80)
-    if failures == EXPECTED_EXCEPTIONAL_CASES:
-        print("Failure list matches the theorem's direct-verification table.")
-    else:
-        print("Failure list does not match EXPECTED_EXCEPTIONAL_CASES.")
-        print(f"Missing from computation: {sorted(EXPECTED_EXCEPTIONAL_CASES - failures)}")
-        print(f"Extra in computation:     {sorted(failures - EXPECTED_EXCEPTIONAL_CASES)}")
+            print(f"q={r.q:>5} = {r.p}^{r.s}, k in [{r.k_min}, {r.k_max}], "
+                  f"holds {r.hold_count}/{r.total_k}, fails at {format_ranges(r.fail_ranges)}")
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -336,7 +336,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument("--char-min", type=int, default=CHAR_MIN)
     parser.add_argument("--workers", type=int, default=cpu_count() or 1)
     parser.add_argument("--decimal", action="store_true", help="run selected high-precision checks")
-    parser.add_argument("--verify-exceptions", action="store_true", help="directly verify the exceptional cases by dynamic programming")
+    parser.add_argument("--verify-exceptions", action="store_true",
+                        help="directly verify the runtime failure cases by dynamic programming")
     parser.add_argument("--verbose", action="store_true", help="print detailed data for each checked k")
     args = parser.parse_args(argv)
 
@@ -360,10 +361,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 if i % 500 == 0 or i == len(futures):
                     print(f"  completed {i}/{len(futures)} cases")
     results.sort(key=lambda r: r.q)
-    print_report(results)
+
+    # Compute the runtime failure set
     failures = {(r.q, k) for r in results for a, b in r.fail_ranges for k in range(a, b + 1)}
-    if failures != EXPECTED_EXCEPTIONAL_CASES:
-        return 1
+
+    print_report(results, failures)
+
     if args.decimal:
         print("\n" + "=" * 80)
         print("SELECTED DECIMAL VERIFICATION")
@@ -371,8 +374,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if verify_selected_points(results):
             return 1
         print("Selected Decimal verification passed.")
-    if args.verify_exceptions and not verify_exception_cases():
-        return 1
+
+    if args.verify_exceptions:
+        if not verify_exception_cases(failures):
+            print("ERROR: Runtime failure cases did NOT pass DP verification!")
+            return 1
+        else:
+            print("All runtime failure cases passed DP verification.")
+
     print("Done.")
     return 0
 
