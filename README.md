@@ -45,7 +45,7 @@ The simplest checker. Defines `CheckTheorem(q, k)`, which enumerates all
 Returns `true` if all $q^2$ pairs are covered, otherwise `false` and prints the
 first missing pairs. The file ends with the example call `CheckTheorem(17, 4)`.
 
-> **Note:** requires $\operatorname{char}(GF(q)) \ne 2$ because it divides by 2 when computing
+> **Note:** requires $\text{char}(GF(q)) \ne 2$ because it divides by 2 when computing
 > $\sum_{i<j} x_i x_j = \frac{\left(\sum x\right)^2 - \sum x^2}{2}$.
 
 ### `check_2nd_moment_range.m`
@@ -68,7 +68,7 @@ builds a bitmask dynamic program: `DP[t+1][(s1,s2)]` is a `q`-bit mask whose
 `s3` bit is set iff some `t`-subset has moments $(s_1, s_2, s_3)$. It then checks
 whether all triples $\left(\sum x,\ \sum x^2,\ \sum x^3\right)$ are attained. Supports prime fields and
 degree-2 extensions, uses complement symmetry ($k \le q/2$) and a centered
-$s_1 = 0$ reduction when $p \nmid k$. Default range: $17 \le q \le 50$, $\operatorname{char} \ge 5$,
+$s_1 = 0$ reduction when $p \nmid k$. Default range: $17 \le q \le 50$, $\text{char} \ge 5$,
 $k \ge 6$.
 
 ### `check_2nd_moment_inequality.py`
