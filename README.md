@@ -101,7 +101,7 @@ $$
 E(k, p, q) = \frac{(q)_k}{q^3} - \frac{q^3 - q}{q^3}\left(L_{k,q,p} + Q_{k,q,p}\right) > 0,
 $$
 
-equivalently $(q)_k > (q^3 - q)\left(L_{k,q,p} + Q_{k,q,p}\right)$, with $L$ and $Q$ as
+equivalently $(q)_k > (q^3-q)\cdot(L_{k,q,p}+Q_{k,q,p})$, with $L$ and $Q$ as
 above. For the small *expected exceptional cases* where the analytic bound is
 not expected to hold, it falls back to a direct finite-field DP check of the
 third-moment subset-sum question (coverage of all triples
