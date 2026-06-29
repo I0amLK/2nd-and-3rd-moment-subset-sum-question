@@ -105,7 +105,7 @@ equivalently $(q)_k > (q^3 - q)\left(L_{k,q,p} + Q_{k,q,p}\right)$, with $L$ and
 above. For the small *expected exceptional cases* where the analytic bound is
 not expected to hold, it falls back to a direct finite-field DP check of the
 third-moment subset-sum question (coverage of all triples
-$\left(\sum x,\ \sum x^2,\ \sum x^3\right)$ over $GF(p^s)$, using NumPy boolean arrays). Default range
+$\left(\sum x, \sum x^2, \sum x^3\right)$ over $GF(p^s)$, using NumPy boolean arrays). Default range
 matches the second-moment inequality script.
 
 ---
